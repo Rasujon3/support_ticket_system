@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Modules\Product\Requests;
+namespace App\Modules\Messages\Requests;
 
 use App\Modules\Product\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 
-class ProductRequest extends FormRequest
+class MessageRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.

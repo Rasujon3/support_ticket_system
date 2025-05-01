@@ -2,10 +2,7 @@
 
 namespace App\Modules\Tickets\Controllers;
 
-use App\Modules\Product\Models\Product;
-use App\Modules\Product\Queries\ProductDatatable;
-use App\Modules\Product\Repositories\ProductRepository;
-use App\Modules\Product\Requests\ProductRequest;
+use App\Models\User;
 use App\Modules\Tickets\Models\Ticket;
 use App\Modules\Tickets\Queries\TicketDatatable;
 use App\Modules\Tickets\Repositories\TicketRepository;
@@ -35,7 +32,7 @@ class TicketController extends AppBaseController
 
         $tickets = $user->isAdmin()
             ? Ticket::latest()->paginate(10)
-            : $user->tickets()?->latest()?->paginate(10);
+            : $user->tickets()->latest()->paginate(10);
 
         return view('Tickets::index', compact('tickets'));
     }
@@ -45,6 +42,9 @@ class TicketController extends AppBaseController
      */
     public function create()
     {
+        if (auth()->user()->isAdmin()) {
+            return redirect()->route('tickets.index')->with('error', 'Admins cannot create tickets.');
+        }
         return view('Tickets::create');
     }
 
@@ -86,10 +86,10 @@ class TicketController extends AppBaseController
     public function assign(Request $request, Ticket $ticket)
     {
         $request->validate([
-            'admin_id' => 'required|exists:users,id',
+            'assigned_to' => 'required|exists:users,id',
         ]);
 
-        $ticket->update(['assigned_to' => $request->admin_id]);
+        $ticket->update(['assigned_to' => $request->assigned_to]);
 
         return back()->with('success', 'Ticket assigned successfully.');
     }
@@ -99,6 +99,10 @@ class TicketController extends AppBaseController
      */
     public function updateStatus(Request $request, Ticket $ticket)
     {
+        if (!auth()->user()->isAdmin()) {
+            return redirect()->route('tickets.index')->with('error', 'Only admins can update ticket status.');
+        }
+
         $request->validate([
             'status' => 'required|in:open,in_progress,resolved,closed',
         ]);
@@ -107,6 +111,20 @@ class TicketController extends AppBaseController
 
         return back()->with('success', 'Ticket status updated.');
     }
+    public function assignForm(Ticket $ticket)
+    {
+        $admins = User::where('role', 'admin')->get();
+        return view('Tickets::assign_form', compact('ticket', 'admins'));
+    }
+
+    public function statusForm(Ticket $ticket)
+    {
+        if (auth()->id() !== $ticket->assigned_to) {
+            return redirect()->route('tickets.index')->with('error', 'Only the assigned admin can update the ticket status.');
+        }
+        return view('Tickets::status_form', compact('ticket'));
+    }
+
 
     /**
      * Authorize access for ticket viewing.
@@ -119,6 +137,6 @@ class TicketController extends AppBaseController
             return true;
         }
 
-        abort(403, 'Unauthorized');
+        return redirect()->route('tickets.index')->with('error', 'Unauthorized');
     }
 }

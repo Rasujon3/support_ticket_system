@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Modules\Messages\Models\Message;
+use App\Modules\Tickets\Models\Ticket;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -65,16 +67,16 @@ class User extends Authenticatable
      */
     public function tickets()
     {
-        # return $this->hasMany(\Modules\Tickets\Entities\Ticket::class);
+        return $this->hasMany(Ticket::class);
     }
 
     public function assignedTickets()
     {
-        # return $this->hasMany(\Modules\Tickets\Entities\Ticket::class, 'assigned_to');
+        return $this->hasMany(Ticket::class, 'assigned_to');
     }
 
     public function messages()
     {
-        # return $this->hasMany(\Modules\Messages\Entities\Message::class);
+        return $this->hasMany(Message::class);
     }
 }

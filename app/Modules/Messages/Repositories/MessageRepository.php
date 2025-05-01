@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Modules\Product\Repositories;
+namespace App\Modules\Messages\Repositories;
 
 use App\Modules\Product\Models\Product;
 use Illuminate\Support\Facades\Log;
 
-class ProductRepository
+class MessageRepository
 {
     public function all()
     {

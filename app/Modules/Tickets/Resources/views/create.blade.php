@@ -8,13 +8,13 @@
             @csrf
 
             <div class="mb-3">
-                <label class="form-label">Title</label>
+                <label class="form-label">Title <span class="text-danger">*</span></label>
                 <input type="text" name="title" class="form-control @error('title') is-invalid @enderror" required value="{{ old('title') }}">
                 @error('title') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Priority</label>
+                <label class="form-label">Priority <span class="text-danger">*</span></label>
                 <select name="priority" class="form-select @error('priority') is-invalid @enderror" required>
                     <option value="">Select Priority</option>
                     <option value="low" {{ old('priority') == 'low' ? 'selected' : '' }}>Low</option>
@@ -25,7 +25,7 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Description</label>
+                <label class="form-label">Description <span class="text-danger">*</span></label>
                 <textarea name="description" rows="4" class="form-control @error('description') is-invalid @enderror" required>{{ old('description') }}</textarea>
                 @error('description') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>

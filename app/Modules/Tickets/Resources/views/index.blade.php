@@ -8,7 +8,7 @@
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
 
-        @if('can:isAdmin')
+        @if(!auth()->user()->isAdmin())
         <a href="{{ route('tickets.create') }}" class="btn btn-primary mb-3">Create New Ticket</a>
         @endif
 
@@ -34,6 +34,12 @@
                         <td>{{ $ticket->created_at->format('d M Y') }}</td>
                         <td>
                             <a href="{{ route('tickets.show', $ticket->id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                            @if(auth()->user()->isAdmin())
+                                <a href="{{ route('tickets.assign.form', $ticket->id) }}" class="btn btn-sm btn-warning">Assign</a>
+                            @endif
+                            @if(auth()->user()->isAdmin() && auth()->id() === $ticket->assigned_to)
+                                <a href="{{ route('tickets.status.form', $ticket->id) }}" class="btn btn-sm btn-info">Change Status</a>
+                            @endif
                         </td>
                     </tr>
                 @empty

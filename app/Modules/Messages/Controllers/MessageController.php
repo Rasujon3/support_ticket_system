@@ -1,102 +1,71 @@
 <?php
 
-namespace App\Modules\Product\Controllers;
+namespace App\Modules\Messages\Controllers;
 
-use App\Modules\Product\Models\Product;
-use App\Modules\Product\Queries\ProductDatatable;
-use App\Modules\Product\Repositories\ProductRepository;
-use App\Modules\Product\Requests\ProductRequest;
+use App\Modules\Attachments\Models\Attachment;
+use App\Modules\Messages\Models\Message;
+use App\Modules\Messages\Queries\MessageDatatable;
+use App\Modules\Messages\Repositories\MessageRepository;
+use App\Modules\Tickets\Models\Ticket;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\AppBaseController;
 
-class ProductController extends AppBaseController
+class MessageController extends AppBaseController
 {
     protected $productRepository;
     protected $productDatatable;
 
     // Inject the repository using the constructor
-    public function __construct(ProductRepository $productRepo, ProductDatatable $productDatatable)
+    public function __construct(MessageRepository $productRepo, MessageDatatable $productDatatable)
     {
         $this->productRepository = $productRepo;
         $this->productDatatable = $productDatatable;
     }
-    public function index(Request $request)
+
+    /**
+     * Store a new ticket reply.
+     */
+    public function store(Request $request, Ticket $ticket)
     {
-        $query = Product::query();
+        $request->validate([
+            'message'     => 'required|string',
+            'attachments.*' => 'nullable|file|max:5120', // max 5MB each
+        ]);
 
-        // Search by keyword (product name)
-        if ($request->has('search') && $request->search != '') {
-            $query->where('product_name', 'like', '%' . $request->search . '%');
+        // Check permission (creator or assigned admin)
+        $user = Auth::user();
+        if ($user->id !== $ticket->user_id && $user->id !== $ticket->assigned_to && !$user->isAdmin()) {
+            abort(403, 'Unauthorized');
         }
 
-        // Filter by product type
-        if ($request->has('product_type') && $request->product_type != '') {
-            $query->where('product_type', $request->product_type);
-        }
+        // Save message
+        $message = Message::create([
+            'ticket_id' => $ticket->id,
+            'user_id'   => $user->id,
+            'message'   => $request->message,
+        ]);
 
-        // Filter by price
-        if ($request->has('max_price') && is_numeric($request->max_price)) {
-            $query->where('price', '<=', $request->max_price);
-        }
+        // Handle attachments
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $originalName = $file->getClientOriginalName();
+                $filePath = $file->storeAs(
+                    'tickets',
+                    uniqid('', true) . '_' . time() . '.' . $file->getClientOriginalExtension(),
+                    'public'
+                );
 
-        // Filter by price category
-        if ($request->has('price_category') && $request->price_category != '') {
-            $query->where('price_category', $request->price_category);
-        }
-
-        // Sort by price
-        if ($request->has('price_sort') && $request->price_sort != '') {
-            if ($request->price_sort == 'low_to_high') {
-                $query->orderBy('price', 'asc');
-            } elseif ($request->price_sort == 'high_to_low') {
-                $query->orderBy('price', 'desc');
+                Attachment::create([
+                    'message_id'    => $message->id,
+                    'file_path'     => $filePath,
+                    'original_name' => $originalName,
+                ]);
             }
-        } else {
-            // Default sorting if no price sort is specified
-            $query->orderBy('created_at', 'desc'); // Or whatever your default sort is
         }
 
-        $products = $query->paginate(10)->withQueryString(); // withQueryString preserves the filter parameters in pagination links
-
-        // Get unique product types for filter dropdown
-        $productTypes = [1 => 'Type 1', 2 => 'Type 2', 3 => 'Type 3'];
-
-        return view('Product::index', compact('products', 'productTypes'));
-    }
-
-    public function create()
-    {
-        return view('Product::create');
-    }
-
-    public function store(ProductRequest $request)
-    {
-        $product = $this->productRepository->store($request->all());
-        if (!$product) {
-            return redirect()->route('products.create')->with('error', 'Something went wrong!!! [PCS-01]!');
-        }
-        return redirect()->route('products.index')->with('success', 'Product created successfully!');
-    }
-    public function edit(Product $product)
-    {
-        return view('Product::edit', compact('product'));
-    }
-
-    public function destroy(Product $product)
-    {
-        $product = $this->productRepository->delete($product);
-        if (!$product) {
-            return redirect()->route('products.index')->with('error', 'Something went wrong!!! [PCD-02]!');
-        }
-        return redirect()->route('products.index')->with('success', 'Product deleted successfully!');
-    }
-    public function view(Product $product)
-    {
-        return view('Product::show', compact(['product']));
-    }
-    public function update(ProductRequest $request, Product $product)
-    {
-        $this->productRepository->update($product, $request->all());
-        return redirect()->route('products.index')->with('success', 'Product updated successfully!');
+        return redirect()->route('tickets.show', $ticket->id)->with('success', 'Reply added successfully.');
     }
 }

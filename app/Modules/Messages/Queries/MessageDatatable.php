@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Product\Queries;
+namespace App\Modules\Messages\Queries;
 
 use App\Modules\Product\Models\Product;
 use App\Modules\Product\Repositories\ProductRepository;
@@ -9,7 +9,7 @@ use Carbon\Carbon;
 
 
 
-class ProductDatatable
+class MessageDatatable
 {
     protected $productRepository;
     protected $countryDatatable;
