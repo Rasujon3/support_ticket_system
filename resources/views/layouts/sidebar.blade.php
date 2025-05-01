@@ -18,6 +18,14 @@
                         <p>Products</p>
                     </a>
                 </li>
+
+                {{-- Tickets--}}
+                <li class="nav-item {{ request()->is('tickets', 'tickets/*') ? 'menu-open' : '' }}">
+                    <a href="{{ route('tickets.index') }}" class="nav-link">
+                        <i class="nav-icon fas fa-box"></i>
+                        <p>Tickets</p>
+                    </a>
+                </li>
             </ul>
         </nav>
     </div>

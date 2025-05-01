@@ -1,22 +1,23 @@
 <?php
 
-namespace App\Modules\Product\Models;
+namespace App\Modules\Messages\Models;
 
+use App\Models\User;
+use App\Modules\Attachments\Models\Attachment;
+use App\Modules\Tickets\Models\Ticket;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Product extends Model
+class Message extends Model
 {
-//    use HasFactory, SoftDeletes;
     use HasFactory;
 
-    protected $table = 'products';
+    protected $table = 'messages';
 
     protected $fillable = [
-        'name',
-        'price',
-        'description',
+        'ticket_id',
+        'user_id',
+        'message',
     ];
 
     public static function rules($productId = null)
@@ -26,5 +27,19 @@ class Product extends Model
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
         ];
+    }
+    public function ticket()
+    {
+        return $this->belongsTo(Ticket::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function attachments()
+    {
+        return $this->hasMany(Attachment::class);
     }
 }

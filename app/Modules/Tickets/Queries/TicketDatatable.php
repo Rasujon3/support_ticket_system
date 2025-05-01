@@ -1,20 +1,22 @@
 <?php
 
-namespace App\Modules\Product\Queries;
+namespace App\Modules\Tickets\Queries;
 
 use App\Modules\Product\Models\Product;
 use App\Modules\Product\Repositories\ProductRepository;
+use App\Modules\Tickets\Models\Ticket;
+use App\Modules\Tickets\Repositories\TicketRepository;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
 
 
 
-class ProductDatatable
+class TicketDatatable
 {
     protected $productRepository;
     protected $countryDatatable;
 
-    public function __construct(ProductRepository $productRepository)
+    public function __construct(TicketRepository $productRepository)
     {
         $this->productRepository = $productRepository;
     }
@@ -52,7 +54,7 @@ class ProductDatatable
 
     public static function getDataForDatatable()
     {
-        $countries = Product::select(['id', 'code', 'name', 'is_active', 'draft', 'is_default', 'flag']);
+        $countries = Ticket::select(['id', 'code', 'name', 'is_active', 'draft', 'is_default', 'flag']);
         return DataTables::of($countries)->make(true);
     }
 }

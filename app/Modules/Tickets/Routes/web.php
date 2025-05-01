@@ -1,15 +1,26 @@
 <?php
 
-use App\Modules\Product\Controllers\ProductController;
+use App\Modules\Tickets\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 
-// Products
-Route::prefix('products')->group(function () {
-    Route::get('/', [ProductController::class, 'index'])->name('products.index');
-    Route::get('/create', [ProductController::class, 'create'])->name('products.create');
-    Route::get('/{product}/view', [ProductController::class, 'view'])->name('products.view');
-    Route::get('/edit/{product}', [ProductController::class, 'edit'])->name('products.edit');
-    Route::post('/', [ProductController::class, 'store'])->name('products.store');
-    Route::put('/{product}', [ProductController::class, 'update'])->name('products.update');
-    Route::delete('/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+Route::middleware(['web', 'auth'])->prefix('tickets')->name('tickets.')->group(function () {
+
+    // List all tickets (user)
+    Route::get('/', [TicketController::class, 'index'])->name('index');
+
+    // Show create ticket form
+    Route::get('/create', [TicketController::class, 'create'])->name('create');
+
+    // Store new ticket
+    Route::post('/', [TicketController::class, 'store'])->name('store');
+
+    // Show ticket detail (only creator or assigned admin)
+    Route::get('/{ticket}', [TicketController::class, 'show'])->name('show');
+
+    // Admin: update ticket status or assignment
+    Route::middleware('can:isAdmin')->group(function () {
+        Route::put('/{ticket}/assign', [TicketController::class, 'assign'])->name('assign');
+        Route::put('/{ticket}/status', [TicketController::class, 'updateStatus'])->name('status.update');
+    });
+
 });

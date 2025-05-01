@@ -1,22 +1,23 @@
 <?php
 
-namespace App\Modules\Product\Models;
+namespace App\Modules\Attachments\Models;
 
+use App\Modules\Message\Models\Message;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Product extends Model
+class Attachment extends Model
 {
 //    use HasFactory, SoftDeletes;
     use HasFactory;
 
-    protected $table = 'products';
+    protected $table = 'attachments';
 
     protected $fillable = [
-        'name',
-        'price',
-        'description',
+        'message_id',
+        'file_path',
+        'original_name',
     ];
 
     public static function rules($productId = null)
@@ -26,5 +27,9 @@ class Product extends Model
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
         ];
+    }
+    public function message()
+    {
+        return $this->belongsTo(Message::class);
     }
 }

@@ -1,24 +1,24 @@
 <?php
 
-namespace App\Modules\Product\Repositories;
+namespace App\Modules\Tickets\Repositories;
 
-use App\Modules\Product\Models\Product;
+use App\Modules\Tickets\Models\Ticket;
 use Illuminate\Support\Facades\Log;
 
-class ProductRepository
+class TicketRepository
 {
     public function all()
     {
-        return Product::all();
+        return Ticket::all();
     }
 
-    public function store(array $data): ?Product
+    public function store(array $data): ?Ticket
     {
         try {
             // Create the record in the database
-            $product = Product::create($data);
+            $ticket = Ticket::create($data);
 
-            return $product;
+            return $ticket;
         } catch (\Exception $e) {
             // Log the error
             Log::error('Error in storing data: ' , [
@@ -32,13 +32,13 @@ class ProductRepository
         }
     }
 
-    public function update(Product $product, array $data): ?Product
+    public function update(Ticket $ticket, array $data): ?Ticket
     {
         try {
             // Perform the update
-            $product->update($data);
+            $ticket->update($data);
 
-            return $product;
+            return $ticket;
         } catch (\Exception $e) {
             // Log the error
             Log::error('Error updating data: ' , [
@@ -52,15 +52,15 @@ class ProductRepository
         }
     }
 
-    public function delete(Product $product)
+    public function delete(Ticket $ticket)
     {
         try {
-            $product->delete();
+            $ticket->delete();
             return true;
         } catch (\Exception $e) {
             // Log error
             Log::error('Error deleting data: ' , [
-                'country_id' => $product->id,
+                'country_id' => $ticket->id,
                 'message' => $e->getMessage(),
                 'code' => $e->getCode(),
                 'line' => $e->getLine(),
@@ -72,6 +72,6 @@ class ProductRepository
 
     public function find($id)
     {
-        return Product::findOrFail($id);
+        return Ticket::findOrFail($id);
     }
 }

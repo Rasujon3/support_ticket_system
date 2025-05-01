@@ -1,102 +1,124 @@
 <?php
 
-namespace App\Modules\Product\Controllers;
+namespace App\Modules\Tickets\Controllers;
 
 use App\Modules\Product\Models\Product;
 use App\Modules\Product\Queries\ProductDatatable;
 use App\Modules\Product\Repositories\ProductRepository;
 use App\Modules\Product\Requests\ProductRequest;
+use App\Modules\Tickets\Models\Ticket;
+use App\Modules\Tickets\Queries\TicketDatatable;
+use App\Modules\Tickets\Repositories\TicketRepository;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AppBaseController;
+use Illuminate\Support\Facades\Auth;
 
-class ProductController extends AppBaseController
+class TicketController extends AppBaseController
 {
     protected $productRepository;
     protected $productDatatable;
 
     // Inject the repository using the constructor
-    public function __construct(ProductRepository $productRepo, ProductDatatable $productDatatable)
+    public function __construct(TicketRepository $productRepo, TicketDatatable $productDatatable)
     {
         $this->productRepository = $productRepo;
         $this->productDatatable = $productDatatable;
     }
-    public function index(Request $request)
+    /**
+     * Display a list of tickets.
+     * - User sees their own tickets.
+     * - Admin sees all tickets.
+     */
+    public function index()
     {
-        $query = Product::query();
+        $user = Auth::user();
 
-        // Search by keyword (product name)
-        if ($request->has('search') && $request->search != '') {
-            $query->where('product_name', 'like', '%' . $request->search . '%');
-        }
+        $tickets = $user->isAdmin()
+            ? Ticket::latest()->paginate(10)
+            : $user->tickets()?->latest()?->paginate(10);
 
-        // Filter by product type
-        if ($request->has('product_type') && $request->product_type != '') {
-            $query->where('product_type', $request->product_type);
-        }
-
-        // Filter by price
-        if ($request->has('max_price') && is_numeric($request->max_price)) {
-            $query->where('price', '<=', $request->max_price);
-        }
-
-        // Filter by price category
-        if ($request->has('price_category') && $request->price_category != '') {
-            $query->where('price_category', $request->price_category);
-        }
-
-        // Sort by price
-        if ($request->has('price_sort') && $request->price_sort != '') {
-            if ($request->price_sort == 'low_to_high') {
-                $query->orderBy('price', 'asc');
-            } elseif ($request->price_sort == 'high_to_low') {
-                $query->orderBy('price', 'desc');
-            }
-        } else {
-            // Default sorting if no price sort is specified
-            $query->orderBy('created_at', 'desc'); // Or whatever your default sort is
-        }
-
-        $products = $query->paginate(10)->withQueryString(); // withQueryString preserves the filter parameters in pagination links
-
-        // Get unique product types for filter dropdown
-        $productTypes = [1 => 'Type 1', 2 => 'Type 2', 3 => 'Type 3'];
-
-        return view('Product::index', compact('products', 'productTypes'));
+        return view('Tickets::index', compact('tickets'));
     }
 
+    /**
+     * Show the ticket creation form.
+     */
     public function create()
     {
-        return view('Product::create');
+        return view('Tickets::create');
     }
 
-    public function store(ProductRequest $request)
+    /**
+     * Store a new ticket.
+     */
+    public function store(Request $request)
     {
-        $product = $this->productRepository->store($request->all());
-        if (!$product) {
-            return redirect()->route('products.create')->with('error', 'Something went wrong!!! [PCS-01]!');
-        }
-        return redirect()->route('products.index')->with('success', 'Product created successfully!');
+        $request->validate([
+            'title'       => 'required|string|max:255',
+            'description' => 'required|string',
+            'priority'    => 'required|in:low,medium,high',
+        ]);
+
+        Ticket::create([
+            'user_id'     => Auth::id(),
+            'title'       => $request->title,
+            'description' => $request->description,
+            'priority'    => $request->priority,
+            'status'      => 'open',
+        ]);
+
+        return redirect()->route('tickets.index')->with('success', 'Ticket created successfully.');
     }
-    public function edit(Product $product)
+    /**
+     * Show a single ticket with its messages (conversation).
+     */
+    public function show(Ticket $ticket)
     {
-        return view('Product::edit', compact('product'));
+        $this->authorizeTicketAccess($ticket);
+
+        $messages = $ticket->messages()->with('user')->get();
+
+        return view('Tickets::show', compact('ticket', 'messages'));
+    }
+    /**
+     * Assign ticket to an admin (Admin only).
+     */
+    public function assign(Request $request, Ticket $ticket)
+    {
+        $request->validate([
+            'admin_id' => 'required|exists:users,id',
+        ]);
+
+        $ticket->update(['assigned_to' => $request->admin_id]);
+
+        return back()->with('success', 'Ticket assigned successfully.');
     }
 
-    public function destroy(Product $product)
+    /**
+     * Update ticket status (Admin only).
+     */
+    public function updateStatus(Request $request, Ticket $ticket)
     {
-        $product = $this->productRepository->delete($product);
-        if (!$product) {
-            return redirect()->route('products.index')->with('error', 'Something went wrong!!! [PCD-02]!');
+        $request->validate([
+            'status' => 'required|in:open,in_progress,resolved,closed',
+        ]);
+
+        $ticket->update(['status' => $request->status]);
+
+        return back()->with('success', 'Ticket status updated.');
+    }
+
+    /**
+     * Authorize access for ticket viewing.
+     */
+    private function authorizeTicketAccess(Ticket $ticket)
+    {
+        $user = Auth::user();
+
+        if ($user->isAdmin() || $ticket->user_id === $user->id || $ticket->assigned_to === $user->id) {
+            return true;
         }
-        return redirect()->route('products.index')->with('success', 'Product deleted successfully!');
-    }
-    public function view(Product $product)
-    {
-        return view('Product::show', compact(['product']));
-    }
-    public function update(ProductRequest $request, Product $product)
-    {
-        $this->productRepository->update($product, $request->all());
-        return redirect()->route('products.index')->with('success', 'Product updated successfully!');
+
+        abort(403, 'Unauthorized');
     }
 }
