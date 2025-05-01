@@ -1,0 +1,57 @@
+<aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <div class="brand-link">
+        <span class="brand-text font-weight-light">Modular Project</span>
+    </div>
+    <div class="sidebar">
+        <nav class="mt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                <li class="nav-item {{ request()->is('dashboard' , 'dashboard/*' , 'dashboard-*') ? 'menu-open' : '' }}">
+                    <a href="{{ route('dashboard.index') }}" class="nav-link">
+                        <i class="nav-icon fas fa-tachometer-alt"></i>
+                        <p>Dashboard</p>
+                    </a>
+                </li>
+
+                <li class="nav-item {{ request()->is('products', 'products/*') ? 'menu-open' : '' }}">
+                    <a href="{{ route('products.index') }}" class="nav-link">
+                        <i class="nav-icon fas fa-box"></i>
+                        <p>Products</p>
+                    </a>
+                </li>
+                {{-- Leads Start --}}
+                {{--
+                <li class="nav-item {{ request()->is('admin/lead', 'admin/leads') ? 'menu-open' : '' }}">
+                    <a href="#" class="nav-link ">
+                        <i class="nav-icon fas fa-tty"></i>
+                        <p>
+                            Leads
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview pl-3" style="display: {{ request()->is('admin/lead-status', 'admin/lead-sources', 'admin/leads', 'admin/lead-*') ? 'block' : 'none' }};">
+                        <li class="nav-item">
+                            <a href="{{ route('lead.status.index') }}" class="nav-link {{ request()->is('admin/lead-status' , 'admin/lead-status/*' , 'admin/lead-status-*') ? 'active' : '' }}">
+                                <i class="fas fa-blender-phone nav-icon"></i>
+                                <p>Lead Status</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('lead.source.index') }}" class="nav-link {{ request()->is('admin/lead-sources' , 'admin/lead-sources/*' , 'admin/lead-sources-*') ? 'active' : '' }}">
+                                <i class="fas fa-globe nav-icon"></i>
+                                <p>Lead Sources</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('leads.index') }}" class="nav-link {{ request()->is('admin/leads' , 'admin/leads/*' , 'admin/leads-*') ? 'active' : '' }}">
+                                <i class="fas fa-tty nav-icon"></i>
+                                <p>Leads</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                --}}
+                {{-- Leads End --}}
+            </ul>
+        </nav>
+    </div>
+</aside>
