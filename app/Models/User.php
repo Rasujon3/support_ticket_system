@@ -10,7 +10,8 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    # use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -21,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -41,4 +43,38 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Automatically hash passwords when set.
+     */
+    public function setPasswordAttribute($value)
+    {
+        $this->attributes['password'] = bcrypt($value);
+    }
+
+    /**
+     * Check if user is admin.
+     */
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Relationships.
+     */
+    public function tickets()
+    {
+        # return $this->hasMany(\Modules\Tickets\Entities\Ticket::class);
+    }
+
+    public function assignedTickets()
+    {
+        # return $this->hasMany(\Modules\Tickets\Entities\Ticket::class, 'assigned_to');
+    }
+
+    public function messages()
+    {
+        # return $this->hasMany(\Modules\Messages\Entities\Message::class);
+    }
 }
