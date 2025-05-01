@@ -25,8 +25,8 @@ class LoginController extends Controller
 
             // Redirect based on role
             return Auth::user()->isAdmin()
-                ? redirect()->route('admin.dashboard')
-                : redirect()->route('home');
+                ? redirect()->route('dashboard.index')
+                : redirect()->route('dashboard.index');
         }
 
         return back()->withErrors([

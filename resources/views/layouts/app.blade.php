@@ -87,8 +87,7 @@
                            class="dropdown-item text-danger">
                             <i class="fas fa-sign-out-alt mr-2"></i> Logout
                         </a>
-{{--                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">--}}
-                        <form id="logout-form" action="{{ route('products.create') }}" method="POST" class="d-block">
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                             @csrf
                         </form>
                     </div>
