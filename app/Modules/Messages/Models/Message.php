@@ -20,12 +20,11 @@ class Message extends Model
         'message',
     ];
 
-    public static function rules($productId = null)
+    public static function rules()
     {
         return [
-            'name' => 'required|string|max:191|unique:products,name,' . $productId,
-            'price' => 'required|numeric|min:0',
-            'description' => 'nullable|string',
+            'message'     => 'required|string',
+            'attachments.*' => 'nullable|file|max:5120', // max 5MB each
         ];
     }
     public function ticket()

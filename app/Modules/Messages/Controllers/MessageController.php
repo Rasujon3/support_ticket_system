@@ -6,83 +6,39 @@ use App\Modules\Attachments\Models\Attachment;
 use App\Modules\Messages\Models\Message;
 use App\Modules\Messages\Queries\MessageDatatable;
 use App\Modules\Messages\Repositories\MessageRepository;
+use App\Modules\Messages\Requests\MessageRequest;
 use App\Modules\Tickets\Models\Ticket;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\AppBaseController;
 
 class MessageController extends AppBaseController
 {
-    protected $productRepository;
-    protected $productDatatable;
+    protected $messageRepository;
 
     // Inject the repository using the constructor
-    public function __construct(MessageRepository $productRepo, MessageDatatable $productDatatable)
+    public function __construct(MessageRepository $messageRepo)
     {
-        $this->productRepository = $productRepo;
-        $this->productDatatable = $productDatatable;
+        $this->messageRepository = $messageRepo;
     }
 
     /**
      * Store a new ticket reply.
      */
-    public function store(Request $request, Ticket $ticket)
+    public function store(MessageRequest $request, Ticket $ticket)
     {
-        $request->validate([
-            'message'     => 'required|string',
-            'attachments.*' => 'nullable|file|max:5120', // max 5MB each
-        ]);
-
         // Check permission (creator or assigned admin)
-        $user = Auth::user();
-        if ($user->id !== $ticket->user_id && $user->id !== $ticket->assigned_to && !$user->isAdmin()) {
-            abort(403, 'Unauthorized');
+        $checkPermission = $this->messageRepository->checkPermission($ticket);
+        if (!$checkPermission) {
+            return redirect()->route('tickets.index')->with('error', 'Unauthorized, only the creator or assigned admin can reply.');
         }
 
-        // Save message
-        $message = Message::create([
-            'ticket_id' => $ticket->id,
-            'user_id'   => $user->id,
-            'message'   => $request->message,
-        ]);
+        $store = $this->messageRepository->store($request, $ticket);
 
-        // Handle attachments
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $originalName = $file->getClientOriginalName();
-                $filePath = $this->storeFile($file);
-
-                Attachment::create([
-                    'message_id'    => $message->id,
-                    'file_path'     => $filePath,
-                    'original_name' => $originalName,
-                ]);
-            }
+        if (!$store) {
+            return redirect()->route('tickets.show', $ticket->id)->with('error', 'Failed to add reply.');
         }
 
         return redirect()->route('tickets.show', $ticket->id)->with('success', 'Reply added successfully.');
-    }
-    private function storeFile($file)
-    {
-        // Define the directory path
-        $filePath = 'files/images/messages';
-        $directory = public_path($filePath);
-
-        // Ensure the directory exists
-        if (!file_exists($directory)) {
-            mkdir($directory, 0777, true);
-        }
-
-        // Generate a unique file name
-        $fileName = uniqid('messages_', true) . '.' . $file->getClientOriginalExtension();
-
-        // Move the file to the destination directory
-        $file->move($directory, $fileName);
-
-        // path & file name in the database
-        $path = $filePath . '/' . $fileName;
-        return $path;
     }
 }

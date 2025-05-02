@@ -2,24 +2,53 @@
 
 namespace App\Modules\Messages\Repositories;
 
-use App\Modules\Product\Models\Product;
+use App\Modules\Attachments\Models\Attachment;
+use App\Modules\Messages\Models\Message;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class MessageRepository
 {
-    public function all()
+    public function checkPermission($ticket)
     {
-        return Product::all();
+        // Check permission (creator or assigned admin)
+        $user = Auth::user();
+        if ($user->id !== $ticket->user_id && $user->id !== $ticket->assigned_to && !$user->isAdmin()) {
+            return false;
+        }
+        return true;
     }
-
-    public function store(array $data): ?Product
+    public function store($request, $ticket): bool
     {
+        DB::beginTransaction();
         try {
+            $user = Auth::user();
             // Create the record in the database
-            $product = Product::create($data);
+            $message = Message::create([
+                'ticket_id' => $ticket->id,
+                'user_id'   => $user->id,
+                'message'   => $request->message,
+            ]);
 
-            return $product;
+            // Handle attachments
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $originalName = $file->getClientOriginalName();
+                    $filePath = $this->storeFile($file);
+
+                    Attachment::create([
+                        'message_id'    => $message->id,
+                        'file_path'     => $filePath,
+                        'original_name' => $originalName,
+                    ]);
+                }
+            }
+            DB::commit();
+
+            return true;
         } catch (\Exception $e) {
+            DB::rollBack();
             // Log the error
             Log::error('Error in storing data: ' , [
                 'message' => $e->getMessage(),
@@ -28,50 +57,28 @@ class MessageRepository
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return null;
-        }
-    }
-
-    public function update(Product $product, array $data): ?Product
-    {
-        try {
-            // Perform the update
-            $product->update($data);
-
-            return $product;
-        } catch (\Exception $e) {
-            // Log the error
-            Log::error('Error updating data: ' , [
-                'message' => $e->getMessage(),
-                'code' => $e->getCode(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return null;
-        }
-    }
-
-    public function delete(Product $product)
-    {
-        try {
-            $product->delete();
-            return true;
-        } catch (\Exception $e) {
-            // Log error
-            Log::error('Error deleting data: ' , [
-                'country_id' => $product->id,
-                'message' => $e->getMessage(),
-                'code' => $e->getCode(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
             return false;
         }
     }
-
-    public function find($id)
+    private function storeFile($file)
     {
-        return Product::findOrFail($id);
+        // Define the directory path
+        $filePath = 'files/images/messages';
+        $directory = public_path($filePath);
+
+        // Ensure the directory exists
+        if (!file_exists($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        // Generate a unique file name
+        $fileName = uniqid('messages_', true) . '.' . $file->getClientOriginalExtension();
+
+        // Move the file to the destination directory
+        $file->move($directory, $fileName);
+
+        // path & file name in the database
+        $path = $filePath . '/' . $fileName;
+        return $path;
     }
 }

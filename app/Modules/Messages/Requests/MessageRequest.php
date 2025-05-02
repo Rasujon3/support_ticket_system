@@ -2,6 +2,7 @@
 
 namespace App\Modules\Messages\Requests;
 
+use App\Modules\Messages\Models\Message;
 use App\Modules\Product\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -25,7 +26,6 @@ class MessageRequest extends FormRequest
      */
     public function rules()
     {
-        $productId = $this->route('product') ? $this->route('product')->id : null;
-        return Product::rules($productId);
+        return Message::rules();
     }
 }
