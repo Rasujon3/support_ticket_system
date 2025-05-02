@@ -90,27 +90,4 @@ class TicketRepository
     {
         return Auth::user();
     }
-
-    public function delete(Ticket $ticket)
-    {
-        try {
-            $ticket->delete();
-            return true;
-        } catch (\Exception $e) {
-            // Log error
-            Log::error('Error deleting data: ' , [
-                'country_id' => $ticket->id,
-                'message' => $e->getMessage(),
-                'code' => $e->getCode(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return false;
-        }
-    }
-
-    public function find($id)
-    {
-        return Ticket::findOrFail($id);
-    }
 }
