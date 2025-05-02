@@ -2,14 +2,12 @@
 
 namespace App\Modules\Attachments\Models;
 
-use App\Modules\Message\Models\Message;
+use App\Modules\Messages\Models\Message;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Attachment extends Model
 {
-//    use HasFactory, SoftDeletes;
     use HasFactory;
 
     protected $table = 'attachments';
