@@ -12,13 +12,6 @@
                     </a>
                 </li>
 
-                <li class="nav-item {{ request()->is('products', 'products/*') ? 'menu-open' : '' }}">
-                    <a href="{{ route('products.index') }}" class="nav-link">
-                        <i class="nav-icon fas fa-box"></i>
-                        <p>Products</p>
-                    </a>
-                </li>
-
                 {{-- Tickets--}}
                 <li class="nav-item {{ request()->is('tickets', 'tickets/*') ? 'menu-open' : '' }}">
                     <a href="{{ route('tickets.index') }}" class="nav-link">
