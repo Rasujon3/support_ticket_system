@@ -52,11 +52,7 @@ class MessageController extends AppBaseController
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
                 $originalName = $file->getClientOriginalName();
-                $filePath = $file->storeAs(
-                    'tickets',
-                    uniqid('', true) . '_' . time() . '.' . $file->getClientOriginalExtension(),
-                    'public'
-                );
+                $filePath = $this->storeFile($file);
 
                 Attachment::create([
                     'message_id'    => $message->id,
@@ -67,5 +63,26 @@ class MessageController extends AppBaseController
         }
 
         return redirect()->route('tickets.show', $ticket->id)->with('success', 'Reply added successfully.');
+    }
+    private function storeFile($file)
+    {
+        // Define the directory path
+        $filePath = 'files/images/messages';
+        $directory = public_path($filePath);
+
+        // Ensure the directory exists
+        if (!file_exists($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        // Generate a unique file name
+        $fileName = uniqid('messages_', true) . '.' . $file->getClientOriginalExtension();
+
+        // Move the file to the destination directory
+        $file->move($directory, $fileName);
+
+        // path & file name in the database
+        $path = $filePath . '/' . $fileName;
+        return $path;
     }
 }

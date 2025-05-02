@@ -29,7 +29,7 @@
                         <ul class="list-unstyled">
                             @foreach ($msg->attachments as $file)
                                 <li>
-                                    <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank">{{ $file->original_name }}</a>
+                                    <a href="{{ asset($file->file_path) }}" target="_blank">{{ $file->original_name }}</a>
                                 </li>
                             @endforeach
                         </ul>

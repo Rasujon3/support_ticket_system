@@ -91,7 +91,7 @@ class TicketController extends AppBaseController
 
         $ticket->update(['assigned_to' => $request->assigned_to]);
 
-        return back()->with('success', 'Ticket assigned successfully.');
+        return redirect()->route('tickets.index')->with('success', 'Ticket assigned successfully.');
     }
 
     /**
@@ -109,7 +109,7 @@ class TicketController extends AppBaseController
 
         $ticket->update(['status' => $request->status]);
 
-        return back()->with('success', 'Ticket status updated.');
+        return redirect()->route('tickets.index')->with('success', 'Ticket status updated.');
     }
     public function assignForm(Ticket $ticket)
     {
