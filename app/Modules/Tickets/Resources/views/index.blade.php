@@ -3,11 +3,6 @@
 @section('content')
     <div class="container mt-4">
         <h4 class="mb-3">My Tickets</h4>
-
-        @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
-
         @if(!auth()->user()->isAdmin())
         <a href="{{ route('tickets.create') }}" class="btn btn-primary mb-3">Create New Ticket</a>
         @endif

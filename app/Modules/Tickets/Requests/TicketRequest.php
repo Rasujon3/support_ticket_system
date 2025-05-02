@@ -2,7 +2,6 @@
 
 namespace App\Modules\Tickets\Requests;
 
-use App\Modules\Product\Models\Product;
 use App\Modules\Tickets\Models\Ticket;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -26,7 +25,17 @@ class TicketRequest extends FormRequest
      */
     public function rules()
     {
-        $productId = $this->route('product') ? $this->route('product')->id : null;
-        return Ticket::rules($productId);
+        // Get the route name and apply null-safe operator
+        $routeName = $this->route()?->getName();
+
+        if ($routeName === 'tickets.assign') {
+            return Ticket::assignRules();
+        }
+
+        if ($routeName === 'tickets.status.update') {
+            return Ticket::updateStatusRules();
+        }
+
+        return Ticket::rules();
     }
 }

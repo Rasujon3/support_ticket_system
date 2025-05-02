@@ -2,24 +2,19 @@
 
 namespace App\Modules\Tickets\Controllers;
 
-use App\Models\User;
 use App\Modules\Tickets\Models\Ticket;
-use App\Modules\Tickets\Queries\TicketDatatable;
 use App\Modules\Tickets\Repositories\TicketRepository;
-use Illuminate\Http\Request;
+use App\Modules\Tickets\Requests\TicketRequest;
 use App\Http\Controllers\AppBaseController;
-use Illuminate\Support\Facades\Auth;
 
 class TicketController extends AppBaseController
 {
-    protected $productRepository;
-    protected $productDatatable;
+    protected $ticketRepository;
 
     // Inject the repository using the constructor
-    public function __construct(TicketRepository $productRepo, TicketDatatable $productDatatable)
+    public function __construct(TicketRepository $ticketRepo)
     {
-        $this->productRepository = $productRepo;
-        $this->productDatatable = $productDatatable;
+        $this->ticketRepository = $ticketRepo;
     }
     /**
      * Display a list of tickets.
@@ -28,11 +23,7 @@ class TicketController extends AppBaseController
      */
     public function index()
     {
-        $user = Auth::user();
-
-        $tickets = $user->isAdmin()
-            ? Ticket::latest()->paginate(10)
-            : $user->tickets()->latest()->paginate(10);
+        $tickets = $this->ticketRepository->getTicketData();
 
         return view('Tickets::index', compact('tickets'));
     }
@@ -51,21 +42,12 @@ class TicketController extends AppBaseController
     /**
      * Store a new ticket.
      */
-    public function store(Request $request)
+    public function store(TicketRequest $request)
     {
-        $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'required|string',
-            'priority'    => 'required|in:low,medium,high',
-        ]);
-
-        Ticket::create([
-            'user_id'     => Auth::id(),
-            'title'       => $request->title,
-            'description' => $request->description,
-            'priority'    => $request->priority,
-            'status'      => 'open',
-        ]);
+        $store = $this->ticketRepository->store($request->all());
+        if (!$store) {
+            return redirect()->back()->with('error', 'Something went wrong!!! [TCS-01]');
+        }
 
         return redirect()->route('tickets.index')->with('success', 'Ticket created successfully.');
     }
@@ -76,20 +58,20 @@ class TicketController extends AppBaseController
     {
         $this->authorizeTicketAccess($ticket);
 
-        $messages = $ticket->messages()->with('user')->get();
+        $messages = $this->ticketRepository->getMessageData($ticket);
 
         return view('Tickets::show', compact('ticket', 'messages'));
     }
     /**
      * Assign ticket to an admin (Admin only).
      */
-    public function assign(Request $request, Ticket $ticket)
+    public function assign(TicketRequest $request, Ticket $ticket)
     {
-        $request->validate([
-            'assigned_to' => 'required|exists:users,id',
-        ]);
-
         $ticket->update(['assigned_to' => $request->assigned_to]);
+        $updated = $this->ticketRepository->assignUpdate($ticket, $request->all());
+        if (!$updated) {
+            return redirect()->back()->with('error', 'Something went wrong!!! [TCU-01]');
+        }
 
         return redirect()->route('tickets.index')->with('success', 'Ticket assigned successfully.');
     }
@@ -97,23 +79,22 @@ class TicketController extends AppBaseController
     /**
      * Update ticket status (Admin only).
      */
-    public function updateStatus(Request $request, Ticket $ticket)
+    public function updateStatus(TicketRequest $request, Ticket $ticket)
     {
-        if (!auth()->user()->isAdmin()) {
-            return redirect()->route('tickets.index')->with('error', 'Only admins can update ticket status.');
+        if (auth()->id() !== $ticket->assigned_to) {
+            return redirect()->route('tickets.index')->with('error', 'Only the assigned admin can update ticket status.');
         }
 
-        $request->validate([
-            'status' => 'required|in:open,in_progress,resolved,closed',
-        ]);
-
-        $ticket->update(['status' => $request->status]);
+        $updated = $this->ticketRepository->updateStatus($ticket, $request->all());
+        if (!$updated) {
+            return redirect()->back()->with('error', 'Something went wrong!!! [TCU-02]');
+        }
 
         return redirect()->route('tickets.index')->with('success', 'Ticket status updated.');
     }
     public function assignForm(Ticket $ticket)
     {
-        $admins = User::where('role', 'admin')->get();
+        $admins = $this->ticketRepository->getAdminsData();
         return view('Tickets::assign_form', compact('ticket', 'admins'));
     }
 
@@ -124,14 +105,12 @@ class TicketController extends AppBaseController
         }
         return view('Tickets::status_form', compact('ticket'));
     }
-
-
     /**
      * Authorize access for ticket viewing.
      */
     private function authorizeTicketAccess(Ticket $ticket)
     {
-        $user = Auth::user();
+        $user = $this->ticketRepository->getUserData();
 
         if ($user->isAdmin() || $ticket->user_id === $user->id || $ticket->assigned_to === $user->id) {
             return true;

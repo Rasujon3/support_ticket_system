@@ -22,12 +22,24 @@ class Ticket extends Model
         'assigned_to',
     ];
 
-    public static function rules($productId = null)
+    public static function rules()
     {
         return [
-            'name' => 'required|string|max:191|unique:products,name,' . $productId,
-            'price' => 'required|numeric|min:0',
-            'description' => 'nullable|string',
+            'title'       => 'required|string|max:255',
+            'description' => 'required|string',
+            'priority'    => 'required|in:low,medium,high',
+        ];
+    }
+    public static function assignRules()
+    {
+        return [
+            'assigned_to' => 'required|exists:users,id',
+        ];
+    }
+    public static function updateStatusRules()
+    {
+        return [
+            'status' => 'required|in:open,in_progress,resolved,closed',
         ];
     }
     // A ticket is created by a user
