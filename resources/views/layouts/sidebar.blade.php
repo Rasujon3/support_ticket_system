@@ -1,6 +1,6 @@
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <div class="brand-link">
-        <span class="brand-text font-weight-light">Modular Project</span>
+        <span class="brand-text font-weight-light">Support Ticket System</span>
     </div>
     <div class="sidebar">
         <nav class="mt-2">
